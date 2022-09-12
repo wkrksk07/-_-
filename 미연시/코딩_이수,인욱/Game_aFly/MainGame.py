@@ -2,6 +2,7 @@ __author__ = 'hahaha'
 
 import pygame
 import random
+## sleep = 잠깐 멈춤
 from time import sleep
 
 WHITE = (255,255,255)
@@ -12,6 +13,9 @@ bat_width = 110
 aircraft_width = 90
 aircraft_height = 55
 
+bat_width = 110
+bat_height = 67
+
 def drawObject(obj, x, y):
     global gamepad
     gamepad.blit(obj,(x, y))
@@ -19,6 +23,9 @@ def drawObject(obj, x, y):
 def runGame():
     global gamepad, aircraft, clock, background1, background2
     global bat, fires, bullet
+
+    isShotBat = False
+    boom_count = 0
 
     bullet_xy = []
 
@@ -46,12 +53,14 @@ def runGame():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     y_change = -5
+
                 elif event.key == pygame.K_DOWN:
                     y_change = 5
-
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    y_change = 0
+                
+                elif event.key == pygame.K_LCTRL:
+                    bullet_x = x + aircraft_width
+                    bullet_y = y + aircraft_height/2
+                    bullet_xy.append([bullet_x, bullet_y])
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
@@ -103,19 +112,39 @@ def runGame():
             for i, bxy in enumerate(bullet_xy):
                 bxy[0] += 15
                 bullet_xy[i][0] = bxy[0]
+
+                #Check if bullet strike Bat
+                if bxy[0] > bat_x:
+                    if bxy[1] > bat_y and bxy[1] < bat_y + bat_height:
+                        bullet_xy.remove(bxy)
+                        isShotBat = True
+
                 if bxy[0] >= pad_width:
-                    bullet_xy.remove(bxy)
+                    try:
+                        bullet_xy.remove(bxy)
+                    except:
+                        pass
 
         drawObject(aircraft, x,y)
-        drawObject(bat,bat_x,bat_y)
-
-        if fire != None:
-            drawObject(fire, fire_x, fire_y)
 
         if len(bullet_xy) != 0:
             for bx, by in bullet_xy:
                 drawObject(bullet, bx, by)
-         
+
+        if not isShotBat:
+            drawObject(bat,bat_x,bat_y)
+        else:
+            drawObject(boom,bat_x,bat_y)
+            boom_count +=1
+            if boom_count>5:
+                boom_count = 0
+                bat_x = pad_width
+                bat_y = random.randrange(0, pad_height-bat_height)
+                isShotBat = False
+
+        if fire != None:
+            drawObject(fire, fire_x, fire_y)
+
         pygame.display.update()
         clock.tick(60)
 
@@ -124,7 +153,7 @@ def runGame():
 
 def initGame():
     global gamepad, aircraft, clock, background1, background2
-    global bat, fires, bullet
+    global bat, fires, bullet, boom
 
     fires = []
 
@@ -137,8 +166,9 @@ def initGame():
     bat = pygame.image.load('Game_aFly/Img/bat.png')
     fires.append(pygame.image.load('Game_aFly/Img/fireball.png'))
     fires.append(pygame.image.load('Game_aFly/Img/fireball2.png'))
+    boom = pygame.image.load('Game_aFly/Img/boom.png')
 
-    for i in range(5):
+    for i in range(3):
         fires.append(None)
 
     bullet = pygame.image.load('Game_aFly/Img/bullet.png')
@@ -151,4 +181,4 @@ if __name__ == '__main__':
     initGame()
 
 
-##https://m.blog.naver.com/samsjang/220706841712
+## https://m.blog.naver.com/samsjang/220710524226 
