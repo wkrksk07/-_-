@@ -1,20 +1,66 @@
 __author__ = 'hahaha'
 
+from cgitb import text
+from itertools import count
+from tkinter import font
+from tkinter.messagebox import NO
 import pygame
 import random
 ## sleep = 잠깐 멈춤
 from time import sleep
 
 WHITE = (255,255,255)
+RED = (255,0,0)
+
 pad_width = 1024
 pad_height = 512
+
 background_width = 1024
-bat_width = 110
+
 aircraft_width = 90
 aircraft_height = 55
 
 bat_width = 110
 bat_height = 67
+
+fireball1_width = 140
+fireball1_height = 60
+fireball2_width = 86
+fireball2_height = 60
+
+def drawScore(count):
+    global gamepad
+
+    font = pygame.font.SysFont(None, 25)
+    text = font.render('bat Passed: ' + str(count), True, WHITE)
+    gamepad.blit(text,(0,0))
+
+def gameOver():
+    global gamepad
+    dispMessage('미션 실패')
+
+def textObj(text, font):
+    textSurface = font.render(text, True, RED)
+    return textSurface, textSurface.get_rect()
+
+def dispMessage(text):
+    global gamepad
+
+    largeText = pygame.font.Font('freesansbold.ttf', 115)
+    TextSurf, TextRect = textObj(text, largeText)
+    TextRect.center = ((pad_width/2),(pad_height/2))
+    gamepad.blit(TextSurf, TextRect)
+    pygame.display.update()
+    pygame.mixer.music.pause()
+    sleep(2)
+    pygame.mixer.unpause()
+    runGame()
+
+def crash():
+    global gamepad, explosion_sound
+    pygame.mixer.music.stop() ## or pause
+    pygame.mixer.Sound.play(shot_sound)
+    dispMessage('GAME OVER!')
 
 def drawObject(obj, x, y):
     global gamepad
@@ -22,10 +68,12 @@ def drawObject(obj, x, y):
 
 def runGame():
     global gamepad, aircraft, clock, background1, background2
-    global bat, fires, bullet
+    global bat, fires, bullet, boom, shot_sound
 
     isShotBat = False
     boom_count = 0
+
+    bat_passed = 0
 
     bullet_xy = []
 
@@ -61,6 +109,7 @@ def runGame():
                     bullet_x = x + aircraft_width
                     bullet_y = y + aircraft_height/2
                     bullet_xy.append([bullet_x, bullet_y])
+                    pygame.mixer.Sound.play(shot_sound)
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
@@ -82,6 +131,12 @@ def runGame():
         drawObject(background1,background1_x,0)
         drawObject(background2,background2_x,0)
 
+        drawScore(bat_passed)
+
+        #Check the number of BAT passed
+        if bat_passed > 2:
+            gameOver()
+
         #Aircraft Postion
         y += y_change
         if y<0:
@@ -92,11 +147,12 @@ def runGame():
         #Bat Pos
         bat_x -= 7
         if bat_x <= 0:
+            bat_passed += 1 
             bat_x = pad_width
             bat_y = random.randrange(0,pad_height)
 
         #Fireball Pos
-        if fire == None:
+        if fire[1] == None:
             fire_x -= 30
         else:
             fire_x -= 15
@@ -125,6 +181,26 @@ def runGame():
                     except:
                         pass
 
+        #Check aircraft crashed by BAT
+        if x + aircraft_width > bat_x:
+            if(y > bat_y and y < bat_y + bat_height) or\
+            (y+aircraft_height > bat_y and y + aircraft_height < bat_y + bat_height):
+                crash()
+
+        #Check aircraft crashed by Fireball
+        if fire[1] != None:
+            if fire[0] == 0:
+                fireball_width = fireball1_width
+                fireball_height = fireball1_height
+            elif fire[0] == 1:
+                fireball_width = fireball2_width
+                fireball_height = fireball2_height
+
+            if x+ aircraft_width > fire_x:
+                if(y>fire_y and y < fire_y + fireball_height) or\
+                (y+ aircraft_height > fire_y and y + aircraft_height < fire_y + fireball_height):
+                    crash()
+
         drawObject(aircraft, x,y)
 
         if len(bullet_xy) != 0:
@@ -136,14 +212,14 @@ def runGame():
         else:
             drawObject(boom,bat_x,bat_y)
             boom_count +=1
-            if boom_count>5:
+            if boom_count > 5:
                 boom_count = 0
                 bat_x = pad_width
                 bat_y = random.randrange(0, pad_height-bat_height)
                 isShotBat = False
 
-        if fire != None:
-            drawObject(fire, fire_x, fire_y)
+        if fire[1] != None:
+            drawObject(fire[1], fire_x, fire_y)
 
         pygame.display.update()
         clock.tick(60)
@@ -154,24 +230,38 @@ def runGame():
 def initGame():
     global gamepad, aircraft, clock, background1, background2
     global bat, fires, bullet, boom
+    global shot_sound, explosion_sound
+
+    ## 배경음
+    ##pygame.mixer.music.load('주소Game_aFly/Audio/mybgm.wav')
+    ##pygame.mixer.music.play(-1)
+    
 
     fires = []
 
     pygame.init()
     gamepad = pygame.display.set_mode((pad_width, pad_height))
     pygame.display.set_caption('Sleve_To_Coding')
+
     aircraft = pygame.image.load('Game_aFly/Img/plane.png')
+
     background1 = pygame.image.load('Game_aFly/Img/background.png')
     background2 = background1.copy()
+
     bat = pygame.image.load('Game_aFly/Img/bat.png')
-    fires.append(pygame.image.load('Game_aFly/Img/fireball.png'))
-    fires.append(pygame.image.load('Game_aFly/Img/fireball2.png'))
+
+    fires.append((0, pygame.image.load('Game_aFly/Img/fireball.png')))
+    fires.append((1, pygame.image.load('Game_aFly/Img/fireball2.png')))
+
     boom = pygame.image.load('Game_aFly/Img/boom.png')
 
     for i in range(3):
-        fires.append(None)
+        fires.append((i+2, None))
 
     bullet = pygame.image.load('Game_aFly/Img/bullet.png')
+
+    shot_sound = pygame.mixer.Sound('Game_aFly/Audio/shot.wav')
+    explosion_sound = pygame.mixer.Sound('Game_aFly/Audio/explosion.wav')
 
     clock = pygame.time.Clock()
     runGame()
