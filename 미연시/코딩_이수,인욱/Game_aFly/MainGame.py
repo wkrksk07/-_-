@@ -1,5 +1,6 @@
 __author__ = 'hahaha'
 
+from inspect import trace
 import pygame as py
 import random
 ## sleep = 잠깐 멈춤
@@ -39,7 +40,7 @@ def gameOver():
 
 def gameComplte():
     global gamepad
-    dispMessage('실패')
+    dispMessage('성공')
 
 def textObj(text, font):
     textSurface = font.render(text, True, RED)
@@ -62,32 +63,35 @@ def crash():
     global gamepad, explosion_sound
     ##py.mixer.music.stop() ## or pause
     ##py.mixer.Sound.play(explosion_sound)
-    dispMessage('GAME OVER!')
+    dispMessage('부디침!')
 
 def drawObject(obj, x, y):
     global gamepad
     gamepad.blit(obj,(x, y))
 
-class Button:
-    def __init__(self, img_in, x, y, width, height, img_act, x_act, y_act, action = None):
-        global gamepad, startStr
+def Button(img_in, x, y, width, height, img_act, x_act, y_act, action = None):
+    global gamepad, startStr
 
-        mouse = py.mouse.get_pos() ##마우스 좌표 저장
-        click = py.mouse.get_pressed() ##클래식
+    mouse = py.mouse.get_pos() ##마우스 좌표 저장
+    click = py.mouse.get_pressed() ##클래식
 
-        if x + width > mouse[0] > x and y + height > mouse[1] > y: ##이미지 안에 있다면
-            gamepad.blit(img_act,(x_act,y_act)) ##클릭이미지 로드
-            if click[0]: ## and action != None
-                sleep(1) ## 1초 지연
-                ##action() ##지정 함수 호출
+    if x + width > mouse[0] > x and y + height > mouse[1] > y: ##이미지 안에 있다면
+        gamepad.blit(img_act,(x_act,y_act)) ##클릭이미지 로드
+        if click[0] and action != None:
+            sleep(1)
+            if action == "Quit":
+                py.quit()
+                quit()
+            elif action == "Play":
                 startStr = "STAGE_1"
                 stageChainge()
-            else:
-                gamepad.blit(img_in,(x,y)) ##마우스 이미지 바깥이면 일반 이미지 로드
+    else:
+        gamepad.blit(img_in,(x,y)) ##마우스 이미지 바깥이면 일반 이미지 로드
 
 def runGame():
     global gamepad, aircraft, clock, background1, background2
-    global bat, fires, bullet, boom, shot_sound, startStr, StartImg, ClickStartImg
+    global bat, fires, bullet, boom, shot_sound, startStr, StartImg, ClickStartImg, EndImg, ClickEndImg, StartImg_width, EndImg_width
+    global crashed
 
     Player_HP = 100
     startStr = "MAIN"
@@ -123,8 +127,18 @@ def runGame():
             #Clear gamepad
             gamepad.fill(WHITE)
 
-            startButton = Button(StartImg,280,260,60,20,ClickStartImg,273,258,None)
+            StartButton = Button(StartImg,512 - (StartImg_width/2),186,60,20,ClickStartImg,512 - (StartImg_width/2),192,"Play")
+            EndButton = Button(EndImg,512 - (EndImg_width/2),256,60,20,ClickEndImg,512 - (EndImg_width/2),262,"Quit")
             
+        elif startStr == "MapChoice":
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    crashed = True
+            #Clear gamepad
+            gamepad.fill(WHITE)
+
+            OneButton = Button(StartImg,512 - (StartImg_width/2),186,60,20,ClickStartImg,512 - (StartImg_width/2),192,"Play")
+            TwoButton = Button(EndImg,512 - (EndImg_width/2),256,60,20,ClickEndImg,512 - (EndImg_width/2),262,"Quit")
 
         elif startStr == "STAGE_1":
             for event in py.event.get():
@@ -142,7 +156,7 @@ def runGame():
                         bullet_x = x + aircraft_width
                         bullet_y = y + aircraft_height/2
                         bullet_xy.append([bullet_x, bullet_y])
-                        ##py.mixer.Sound.play(shot_sound)
+                        py.mixer.Sound.play(shot_sound)
 
                 if event.type == py.KEYUP:
                     if event.key == py.K_UP or event.key == py.K_DOWN:
@@ -270,7 +284,7 @@ def runGame():
 def initGame():
     global gamepad, aircraft, clock, background1, background2
     global bat, fires, bullet, boom
-    global shot_sound, explosion_sound, StartImg, ClickStartImg
+    global shot_sound, explosion_sound, StartImg, ClickStartImg, EndImg, ClickEndImg, StartImg_width, EndImg_width
 
     ## 배경음
     ##py.mixer.music.load('주소Game_aFly/Audio/mybgm.wav')
@@ -290,6 +304,13 @@ def initGame():
 
     StartImg = py.image.load('Game_aFly/Img/clickedStartIcon.png')
     ClickStartImg = StartImg.copy()
+    StartImg_size = StartImg.get_rect().size #이미지 크기
+    StartImg_width = StartImg_size[0] #가로
+
+    EndImg = py.image.load('Game_aFly/Img/clickedQuitIcon.png')
+    ClickEndImg = EndImg.copy()
+    EndImg_size = EndImg.get_rect().size #이미지 크기
+    EndImg_width = EndImg_size[0] #가로
 
     bat = py.image.load('Game_aFly/Img/bat.png')
 
@@ -303,8 +324,8 @@ def initGame():
 
     bullet = py.image.load('Game_aFly/Img/bullet.png')
 
-    ##shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
-    ##explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
+    shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
+    explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
 
     clock = py.time.Clock()
     runGame()
@@ -345,7 +366,7 @@ def stageChainge():
         ##shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
         ##explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
 
-    elif startStr == "STAGE":
+    elif startStr == "MapChoice":
         ## 배경음
         ##py.mixer.music.load('주소Game_aFly/Audio/mybgm.wav')
         ##py.mixer.music.play(-1)
@@ -375,6 +396,37 @@ def stageChainge():
 
         ##shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
         ##explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
+
+    elif startStr == "STAGE_1":
+        ## 배경음
+        ##py.mixer.music.load('주소Game_aFly/Audio/mybgm.wav')
+        ##py.mixer.music.play(-1)
+
+        fires = []
+
+        py.init()
+        gamepad = py.display.set_mode((pad_width, pad_height))
+        py.display.set_caption('Sleve_To_Coding')
+
+        aircraft = py.image.load('Game_aFly/Img/plane.png')
+
+        background1 = py.image.load('Game_aFly/Img/background.png')
+        background2 = background1.copy()
+
+        bat = py.image.load('Game_aFly/Img/bat.png')
+
+        fires.append((0, py.image.load('Game_aFly/Img/fireball.png')))
+        fires.append((1, py.image.load('Game_aFly/Img/fireball2.png')))
+
+        boom = py.image.load('Game_aFly/Img/boom.png')
+
+        for i in range(3):
+            fires.append((i+2, None))
+
+        bullet = py.image.load('Game_aFly/Img/bullet.png')
+
+        shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
+        explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
 
 
 if __name__ == '__main__':
