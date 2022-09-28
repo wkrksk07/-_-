@@ -83,6 +83,12 @@ def Button(img_in, x, y, width, height, img_act, x_act, y_act, action = None):
                 py.quit()
                 quit()
             elif action == "Play":
+                startStr = "MapChoice"
+                stageChainge()
+            elif action == "stage1":
+                startStr = "STAGE_1"
+                stageChainge()
+            elif action == "stage2":
                 startStr = "STAGE_1"
                 stageChainge()
     else:
@@ -90,7 +96,8 @@ def Button(img_in, x, y, width, height, img_act, x_act, y_act, action = None):
 
 def runGame():
     global gamepad, aircraft, clock, background1, background2
-    global bat, fires, bullet, boom, shot_sound, startStr, StartImg, ClickStartImg, EndImg, ClickEndImg, StartImg_width, EndImg_width
+    global bat, fires, bullet, boom, shot_sound, startStr
+    global StartImg, ClickStartImg, EndImg, ClickEndImg, StartImg_width, EndImg_width, stage1Img, stage2Img
     global crashed
 
     Player_HP = 100
@@ -137,8 +144,8 @@ def runGame():
             #Clear gamepad
             gamepad.fill(WHITE)
 
-            OneButton = Button(StartImg,512 - (StartImg_width/2),186,60,20,ClickStartImg,512 - (StartImg_width/2),192,"Play")
-            TwoButton = Button(EndImg,512 - (EndImg_width/2),256,60,20,ClickEndImg,512 - (EndImg_width/2),262,"Quit")
+            OneButton = Button(stage1Img,512 - (StartImg_width/2),186,60,20,ClickStartImg,512 - (StartImg_width/2),192,"stage1")
+            TwoButton = Button(stage2Img,512 - (EndImg_width/2),256,60,20,ClickEndImg,512 - (EndImg_width/2),262,"stage2")
 
         elif startStr == "STAGE_1":
             for event in py.event.get():
@@ -186,10 +193,10 @@ def runGame():
 
             #Aircraft Postion
             y += y_change
-            if y<0:
-                y = 0
-            elif y > pad_height - aircraft_height:
-                y = pad_height - aircraft_height
+            if y<256:
+                y = 256
+            elif y > pad_height - 256 - aircraft_height:
+                y = pad_height - 256- aircraft_height
 
             #Bat Pos
             bat_x -= 7
@@ -333,7 +340,7 @@ def initGame():
 def stageChainge():
     global gamepad, aircraft, clock, background1, background2
     global bat, fires, bullet, boom
-    global shot_sound, explosion_sound, startStr
+    global shot_sound, explosion_sound, startStr, stage1Img, stage2Img
 
     if startStr == "MAIN":
         ## 배경음
@@ -363,9 +370,6 @@ def stageChainge():
 
         bullet = py.image.load('Game_aFly/Img/bullet.png')
 
-        ##shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
-        ##explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
-
     elif startStr == "MapChoice":
         ## 배경음
         ##py.mixer.music.load('주소Game_aFly/Audio/mybgm.wav')
@@ -394,8 +398,10 @@ def stageChainge():
 
         bullet = py.image.load('Game_aFly/Img/bullet.png')
 
-        ##shot_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
-        ##explosion_sound = py.mixer.Sound('Game_aFly/Audio/explosion.wav')
+        stage1Img = py.image.load('Game_aFly/Img/clickedStartIcon.png')
+        stage2Img = py.image.load('Game_aFly/Img/clickedStartIcon.png')
+
+        ##스테이지 선택_sound = py.mixer.Sound('Game_aFly/Audio/shot.wav')
 
     elif startStr == "STAGE_1":
         ## 배경음
